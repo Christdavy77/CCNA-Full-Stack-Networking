@@ -1,34 +1,77 @@
-# 🌐 Projet CCNA : Infrastructure Réseau Redondante & Routage Inter-VLAN
+# 🌐 Évolution d'une Architecture Réseau Cisco (CCNA)
 
-## 📌 Présentation du Projet
-Ce TP simule une infrastructure d'entreprise hautement disponible. L'objectif est de segmenter le réseau en VLANs tout en garantissant une communication fluide entre les services via un switch de distribution (L3) et une agrégation de liens sécurisée.
+Ce projet retrace la conception d'une infrastructure réseau d'entreprise, évoluant d'une configuration segmentée à une architecture hautement disponible et sécurisée.
 
-## 🛠️ Concepts Mis en Œuvre
-- **EtherChannel (PAgP)** : Agrégation de deux interfaces Gigabit pour la redondance et la performance.
-- **Routage Inter-VLAN (SVI)** : Utilisation d'interfaces virtuelles sur le switch DSW1 pour le routage entre réseaux.
-- **Trunking & Native VLAN** : Configuration des liens inter-switches avec le VLAN 99 pour la sécurité.
+## 📁 Accès aux Fichiers Packet Tracer
+- [📥 Architecture de Base (TP2)](./TP2_Base_Infrastructure.pkt)
+- [📥 Architecture Finale Haute Disponibilité (TP3)](./TP3_Architecture_Finale.pkt)
+
+---
+
+## 🛠️ Phase 1 : Fondations (TP2)
+Mise en place de la segmentation et de la performance :
+- **VLANs 10 (Compta) & 20 (Ventes)** : Isolation du trafic par service.
+- **EtherChannel (PAgP)** : Agrégation de liens entre les switches de distribution.
+- **Routage Inter-VLAN** : Configuration de SVI sur switch Layer 3.
+
+---
+
+## 🚀 Phase 2 : Expertise & Sécurité (TP3)
+Optimisation pour une disponibilité critique et protection contre les attaques de couche 2.
+
+### 🔄 Redondance de Passerelle (HSRP)
+Mise en œuvre du protocole **HSRP (Hot Standby Router Protocol)** pour garantir une continuité de service.
+- **IP Virtuelle (VIP) :** `192.168.10.254` et `192.168.20.254`.
+- **Fonctionnement :** DSW1 est "Active". Si DSW1 tombe, DSW2 ("Standby") reprend le trafic instantanément.
+
+### 🛡️ Sécurité DHCP (DHCP Snooping)
+Protection du réseau contre les serveurs DHCP pirates (Rogue DHCP). Seuls les ports Trunks vers le cœur de réseau sont configurés en mode **Trusted**.
+
+---
 
 ## 📸 Preuves de Fonctionnement
+1. **Topologie Réseau complète** : ![Topologie](./01_topologie.png)
+2. **Validation de l'EtherChannel** : ![EtherChannel Status](./02_etherchannel.png)
+3. **État de la Redondance HSRP (TP3)** : ![HSRP Status](./03_interfaces_vlan.png)
+4. **Test de Connectivité (Ping Inter-VLAN)** : ![Ping Final](./04_ping_final.png)
 
-### 1. Topologie Réseau complète
-![Topologie](./01_topologie.png)
-*Vue d'ensemble montrant tous les liens opérationnels (pastilles vertes).*
-
-### 2. Validation de l'EtherChannel
-Vérification que le groupe `Po1` est en état **SU** (Layer2 / In Use) :
-![EtherChannel Status](./02_etherchannel.png)
-
-### 3. Interfaces de Routage (SVI)
-Preuve que les passerelles VLAN 10 et 20 sont actives (Up/Up) :
-![Interfaces](./03_interfaces_vlan.png)
-
-### 4. Test de Connectivité (Ping Inter-VLAN)
-Succès du ping entre le PC-Compta (192.168.10.10) et le PC-Ventes (192.168.20.10) :
-![Ping Final](./04_ping_final.png)
+---
 
 ## 🚀 Commandes de Configuration Clés
-### Activation du routage (DSW1)
+
+### Activation du Routage et EtherChannel (DSW1)
 ```bash
+# Activation du routage IP
 DSW1(config)# ip routing
-DSW1(config-if)# interface vlan 10
-DSW1(config-if)# ip address 192.168.10.1 255.255.255.0
+
+# Configuration de l'EtherChannel
+DSW1(config)# interface range fa0/1 - 2
+DSW1(config-if-range)# channel-group 1 mode desirable
+DSW1(config-if-range)# switchport mode trunk
+
+
+# Configuration pour le VLAN 10
+DSW1(config)# interface vlan 10
+DSW1(config-if)# standby 10 ip 192.168.10.254
+DSW1(config-if)# standby 10 priority 110
+DSW1(config-if)# standby 10 preempt
+
+# Configuration pour le VLAN 20
+DSW1(config)# interface vlan 20
+DSW1(config-if)# standby 20 ip 192.168.20.254
+DSW1(config-if)# standby 20 priority 110
+DSW1(config-if)# standby 20 preempt
+
+
+# Activation globale
+ASW1(config)# ip dhcp snooping
+ASW1(config)# ip dhcp snooping vlan 10,20
+
+# Configuration du port de confiance (Trunk vers DSW)
+ASW1(config)# interface fastEthernet 0/1
+ASW1(config-if)# ip dhcp snooping trust
+
+```
+Auteur : Christdavy77
+
+Statut : Projet CCNA Finalisé - Redondance & Sécurité validées.
